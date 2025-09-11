@@ -2706,14 +2706,13 @@ public abstract class JsonGenerator
      */
     public void copyCurrentStructureExact(JsonParser p) throws IOException
     {
+        // NOTE: logic copied from `copyCurrentStructure()` from above
         JsonToken t = p.currentToken();
-        // Let's handle field-name separately first
         int id = (t == null) ? ID_NOT_AVAILABLE : t.id();
         if (id == ID_FIELD_NAME) {
             writeFieldName(p.currentName());
             t = p.nextToken();
             id = (t == null) ? ID_NOT_AVAILABLE : t.id();
-            // fall-through to copy the associated value
         }
         switch (id) {
         case ID_START_OBJECT:

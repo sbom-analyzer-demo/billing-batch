@@ -1,6 +1,5 @@
 package com.fasterxml.jackson.core.write;
 
-
 import java.io.*;
 
 import org.junit.jupiter.api.Test;
@@ -13,14 +12,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Set of basic unit tests for verifying that copy-through methods
  * of {@link JsonGenerator} work as expected.
  */
-class GeneratorCopyTest
-        extends JUnit5TestBase
+class GeneratorCopyTest extends JUnit5TestBase
 {
     private final JsonFactory JSON_F = sharedStreamFactory();
 
     @Test
-    void copyRootTokens()
-            throws IOException
+    void copyRootTokens() throws Exception
     {
         JsonFactory jf = JSON_F;
         final String DOC = "\"text\\non two lines\" true false 2.0 null 1234567890123 ";
@@ -42,8 +39,7 @@ class GeneratorCopyTest
     }
 
     @Test
-    void copyArrayTokens()
-            throws IOException
+    void copyArrayTokens() throws Exception
     {
         JsonFactory jf = JSON_F;
         final String DOC = "123 [ 1, null, [ false, 1234567890124 ] ]";
@@ -69,8 +65,7 @@ class GeneratorCopyTest
     }
 
     @Test
-    void copyObjectTokens()
-            throws IOException
+    void copyObjectTokens() throws Exception
     {
         JsonFactory jf = JSON_F;
         final String DOC = "{ \"a\":1, \"b\":[{ \"c\" : null, \"d\" : 0.25 }] }";
@@ -102,19 +97,19 @@ class GeneratorCopyTest
     }
 
     @Test
-    void copyNumericTokensExactly()
-            throws IOException
+    void copyNumericTokensExactly() throws Exception
     {
         JsonFactory jf = JSON_F;
         final String DOC = a2q("{ 'a':0.123456789123456789123456789, 'b':[" +
             "{ 'c' : null, 'd' : 0.123456789123456789123456789 }] }");
-        try(JsonParser jp = jf.createParser(new StringReader(DOC))) {
+        try (JsonParser p = jf.createParser(DOC)) {
             StringWriter sw = new StringWriter();
             try (JsonGenerator gen = jf.createGenerator(sw)) {
-                assertToken(JsonToken.START_OBJECT, jp.nextToken());
-                gen.copyCurrentStructureExact(jp);
+                assertToken(JsonToken.START_OBJECT, p.nextToken());
+                gen.copyCurrentStructureExact(p);
                 // which will advance parser to matching end Object
-                assertToken(JsonToken.END_OBJECT, jp.currentToken());
+                assertToken(JsonToken.END_OBJECT, p.currentToken());
+                gen.close();
                 assertEquals(
                     a2q("{'a':0.123456789123456789123456789,'b':[" +
                         "{'c':null,'d':0.123456789123456789123456789}]}"),
@@ -123,12 +118,13 @@ class GeneratorCopyTest
             }
         }
 
-        try(JsonParser jp = jf.createParser(new StringReader("0.123456789123456789123456789"))) {
+        try (JsonParser p = jf.createParser("0.123456789123456789123456789")){
             StringWriter sw = new StringWriter();
             try (JsonGenerator gen = jf.createGenerator(sw)) {
-                assertToken(JsonToken.VALUE_NUMBER_FLOAT, jp.nextToken());
-                gen.copyCurrentStructureExact(jp);
-                assertToken(JsonToken.VALUE_NUMBER_FLOAT, jp.currentToken());
+                assertToken(JsonToken.VALUE_NUMBER_FLOAT, p.nextToken());
+                gen.copyCurrentStructureExact(p);
+                assertToken(JsonToken.VALUE_NUMBER_FLOAT, p.currentToken());
+                gen.close();
                 assertEquals("0.123456789123456789123456789", sw.toString());
             }
         }
