@@ -159,8 +159,10 @@ public class BufferRecycler
         }
         byte[] buffer = _byteBuffers.getAndSet(ix, null);
         if (buffer == null || buffer.length < minSize) {
+System.err.print(" [Ab"+ix+"]");
             buffer = balloc(minSize);
         }
+else System.err.print(" [Ub"+ix+"]");
         return buffer;
     }
 
@@ -168,9 +170,11 @@ public class BufferRecycler
         // 13-Jan-2024, tatu: [core#1186] Replace only if beneficial:
         byte[] oldBuffer = _byteBuffers.get(ix);
         if ((oldBuffer == null) || buffer.length > oldBuffer.length) {
+System.err.print(" [Rb"+ix+"]");
             // Could use CAS, but should not really matter
             _byteBuffers.set(ix, buffer);
         }
+else System.err.print(" [FailRb"+ix+"]");
     }
 
     /*
@@ -190,8 +194,10 @@ public class BufferRecycler
         }
         char[] buffer = _charBuffers.getAndSet(ix, null);
         if (buffer == null || buffer.length < minSize) {
+System.err.print(" [Ac"+ix+"]");
             buffer = calloc(minSize);
         }
+        else System.err.print(" [Uc"+ix+"]");
         return buffer;
     }
 
@@ -199,9 +205,11 @@ public class BufferRecycler
         // 13-Jan-2024, tatu: [core#1186] Replace only if beneficial:
         char[] oldBuffer = _charBuffers.get(ix);
         if ((oldBuffer == null) || buffer.length > oldBuffer.length) {
+System.err.print(" [Rc"+ix+"]");
             // Could use CAS, but should not really matter
             _charBuffers.set(ix, buffer);
         }
+else System.err.print(" [FailRc"+ix+"]");
     }
 
     /*
