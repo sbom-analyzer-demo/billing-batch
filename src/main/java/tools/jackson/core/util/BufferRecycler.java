@@ -167,6 +167,7 @@ else System.err.print(" [Ub"+ix+"]");
     }
 
     public void releaseByteBuffer(int ix, byte[] buffer) {
+Objects.requireNonNull(buffer);
         // 13-Jan-2024, tatu: [core#1186] Replace only if beneficial:
         byte[] oldBuffer = _byteBuffers.get(ix);
         if ((oldBuffer == null) || buffer.length > oldBuffer.length) {
@@ -202,6 +203,7 @@ System.err.print(" [Ac"+ix+"]");
     }
 
     public void releaseCharBuffer(int ix, char[] buffer) {
+Objects.requireNonNull(buffer);
         // 13-Jan-2024, tatu: [core#1186] Replace only if beneficial:
         char[] oldBuffer = _charBuffers.get(ix);
         if ((oldBuffer == null) || buffer.length > oldBuffer.length) {
