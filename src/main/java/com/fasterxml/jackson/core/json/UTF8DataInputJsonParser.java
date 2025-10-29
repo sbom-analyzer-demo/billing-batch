@@ -1018,7 +1018,13 @@ public class UTF8DataInputJsonParser
             }
         } else {
             outBuf[0] = (char) c;
-            c = _inputData.readUnsignedByte();
+            try {
+                c = _inputData.readUnsignedByte();
+            } catch (EOFException e) {
+                // Just one digit; that's fine
+                _textBuffer.setCurrentLength(1);
+                return resetInt(false, 1);
+            }
             outPtr = 1;
         }
         int intLen = outPtr;
@@ -1031,7 +1037,13 @@ public class UTF8DataInputJsonParser
                 outPtr = 0;
             }
             outBuf[outPtr++] = (char) c;
-            c = _inputData.readUnsignedByte();
+            try {
+                c = _inputData.readUnsignedByte();
+            } catch (EOFException e) {
+                // Hit end of input; that's fine, means we have full integer
+                _textBuffer.setCurrentLength(outPtr);
+                return resetInt(false, intLen);
+            }
         }
         if (c == '.' || (c | 0x20) == INT_e) { // ~ '.eE'
             return _parseFloat(outBuf, outPtr, c, false, intLen);
@@ -1081,7 +1093,13 @@ public class UTF8DataInputJsonParser
             if (c > INT_9) {
                 return _handleInvalidNumberStart(c, negative, true);
             }
-            c = _inputData.readUnsignedByte();
+            try {
+                c = _inputData.readUnsignedByte();
+            } catch (EOFException e) {
+                // Just the sign and one digit; that's fine
+                _textBuffer.setCurrentLength(outPtr);
+                return resetInt(negative, 1);
+            }
         }
         // Ok: we can first just add digit we saw first:
         int intLen = 1;
@@ -1094,7 +1112,13 @@ public class UTF8DataInputJsonParser
                 outPtr = 0;
             }
             outBuf[outPtr++] = (char) c;
-            c = _inputData.readUnsignedByte();
+            try {
+                c = _inputData.readUnsignedByte();
+            } catch (EOFException e) {
+                // Hit end of input; that's fine, means we have full integer
+                _textBuffer.setCurrentLength(outPtr);
+                return resetInt(negative, intLen);
+            }
         }
         if (c == '.' || (c | 0x20) == INT_e) { // ~ '.eE'
             return _parseFloat(outBuf, outPtr, c, negative, intLen);
@@ -1121,7 +1145,13 @@ public class UTF8DataInputJsonParser
      */
     private final int _handleLeadingZeroes() throws IOException
     {
-        int ch = _inputData.readUnsignedByte();
+        int ch;
+        try {
+            ch = _inputData.readUnsignedByte();
+        } catch (EOFException e) {
+            // Just a zero; perfectly valid
+            return INT_0;
+        }
         // if not followed by a number (probably '.'); return zero as is, to be included
         if (ch < INT_0 || ch > INT_9) {
             return ch;
@@ -1132,7 +1162,12 @@ public class UTF8DataInputJsonParser
         }
         // if so, just need to skip either all zeroes (if followed by number); or all but one (if non-number)
         while (ch == INT_0) {
-            ch = _inputData.readUnsignedByte();
+            try {
+                ch = _inputData.readUnsignedByte();
+            } catch (EOFException e) {
+                // Trailing zero; return it
+                return INT_0;
+            }
         }
         return ch;
     }
@@ -1153,7 +1188,18 @@ public class UTF8DataInputJsonParser
 
             fract_loop:
             while (true) {
-                c = _inputData.readUnsignedByte();
+                try {
+                    c = _inputData.readUnsignedByte();
+                } catch (EOFException e) {
+                    // Hit end of input during fraction; acceptable if we have at least one digit
+                    if (fractLen == 0) {
+                        if (!isEnabled(JsonReadFeature.ALLOW_TRAILING_DECIMAL_POINT_FOR_NUMBERS.mappedFeature())) {
+                            _reportUnexpectedNumberChar('.', "Decimal point not followed by a digit");
+                        }
+                    }
+                    _textBuffer.setCurrentLength(outPtr);
+                    return resetFloat(negative, integerPartLength, fractLen, 0);
+                }
                 if (c < INT_0 || c > INT_9) {
                     break fract_loop;
                 }
@@ -1179,7 +1225,12 @@ public class UTF8DataInputJsonParser
                 outPtr = 0;
             }
             outBuf[outPtr++] = (char) c;
-            c = _inputData.readUnsignedByte();
+            try {
+                c = _inputData.readUnsignedByte();
+            } catch (EOFException e) {
+                _reportUnexpectedNumberChar('e', "Exponent indicator not followed by a digit");
+                return null; // never gets here
+            }
             // Sign indicator?
             if (c == '-' || c == '+') {
                 if (outPtr >= outBuf.length) {
@@ -1187,7 +1238,12 @@ public class UTF8DataInputJsonParser
                     outPtr = 0;
                 }
                 outBuf[outPtr++] = (char) c;
-                c = _inputData.readUnsignedByte();
+                try {
+                    c = _inputData.readUnsignedByte();
+                } catch (EOFException e) {
+                    _reportUnexpectedNumberChar(c, "Exponent indicator not followed by a digit");
+                    return null; // never gets here
+                }
             }
             while (c <= INT_9 && c >= INT_0) {
                 ++expLen;
@@ -1196,7 +1252,16 @@ public class UTF8DataInputJsonParser
                     outPtr = 0;
                 }
                 outBuf[outPtr++] = (char) c;
-                c = _inputData.readUnsignedByte();
+                try {
+                    c = _inputData.readUnsignedByte();
+                } catch (EOFException e) {
+                    // Hit end of input during exponent; acceptable if we have at least one digit
+                    if (expLen == 0) {
+                        _reportUnexpectedNumberChar('0', "Exponent indicator not followed by a digit");
+                    }
+                    _textBuffer.setCurrentLength(outPtr);
+                    return resetFloat(negative, integerPartLength, fractLen, expLen);
+                }
             }
             // must be followed by sequence of ints, one minimum
             if (expLen == 0) {
