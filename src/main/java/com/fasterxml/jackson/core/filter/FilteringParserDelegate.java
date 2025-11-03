@@ -672,8 +672,22 @@ public class FilteringParserDelegate extends JsonParserDelegate
                     f = _headContext.getFilter();
                     if ((f != null) && (f != TokenFilter.INCLUDE_ALL)) {
                         boolean includeEmpty = f.includeEmptyObject(_headContext.hasCurrentName());
+                        // [core#1418]: If object is empty (start not handled), parent is an array,
+                        // and parent wants to include empty arrays, include this empty object
+                        // to preserve array structure
+                        if (!includeEmpty && !returnEnd && _headContext._parent != null
+                                && _headContext._parent.inArray()) {
+                            TokenFilter parentFilter = _headContext._parent.getFilter();
+                            if ((parentFilter != null) && (parentFilter != TokenFilter.INCLUDE_ALL)) {
+                                includeEmpty = parentFilter.includeEmptyArray(_headContext._parent.hasCurrentIndex());
+                            }
+                        }
                         f.filterFinishObject();
                         if (includeEmpty) {
+                            _headContext._currentName = _headContext._parent == null
+                                    ? null
+                                    : _headContext._parent._currentName;
+                            _headContext._needToHandleName = false;
                             return _nextBuffered(_headContext);
                         }                    }
                     _headContext = _headContext.getParent();
@@ -847,6 +861,15 @@ public class FilteringParserDelegate extends JsonParserDelegate
                 f = _headContext.getFilter();
                 if ((f != null) && (f != TokenFilter.INCLUDE_ALL)) {
                     boolean includeEmpty = f.includeEmptyObject(_headContext.hasCurrentName());
+                    // [core#1418]: If parent is an array and wants to include empty arrays,
+                    // include this empty object to preserve array structure
+                    if (!includeEmpty && _headContext._parent != null
+                            && _headContext._parent.inArray()) {
+                        TokenFilter parentFilter = _headContext._parent.getFilter();
+                        if ((parentFilter != null) && (parentFilter != TokenFilter.INCLUDE_ALL)) {
+                            includeEmpty = parentFilter.includeEmptyArray(_headContext._parent.hasCurrentIndex());
+                        }
+                    }
                     f.filterFinishObject();
                     if (includeEmpty) {
                         _headContext._currentName = _headContext._parent == null

@@ -1,4 +1,4 @@
-package com.fasterxml.jackson.core.tofix;
+package com.fasterxml.jackson.core.filter;
 
 import org.junit.jupiter.api.Test;
 
@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.core.filter.FilteringParserDelegate;
 import com.fasterxml.jackson.core.filter.TokenFilter;
 import com.fasterxml.jackson.core.filter.TokenFilter.Inclusion;
-import com.fasterxml.jackson.core.testutil.failure.JacksonTestFailureExpected;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -39,8 +38,7 @@ class ParserFilterEmpty1418Test extends JUnit5TestBase
 
     private final JsonFactory JSON_F = newStreamFactory();
 
-    // [core#1418]: case #1: failing
-    @JacksonTestFailureExpected
+    // [core#1418]: case #1
     @Test
     void filterArrayWithObjectsEndingWithFilteredProperty1() throws Exception
     {
