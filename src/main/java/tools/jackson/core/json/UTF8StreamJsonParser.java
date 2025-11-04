@@ -1573,6 +1573,8 @@ public class UTF8StreamJsonParser
                 if (i != INT_QUOTE) {
                     return -1;
                 }
+                // [core#1491]: Need to include partial quad in matching
+                _quadBuffer[qlen++] = q;
                 _quadPtr = qptr;
                 return matcher.matchByQuad(_quadBuffer, qlen);
             }
@@ -1582,8 +1584,10 @@ public class UTF8StreamJsonParser
                 if (i != INT_QUOTE) {
                     return -1;
                 }
-//                q = _padLastQuadNoCheck(q, (-1 << 8));
-                break;
+                // [core#1491]: Need to include partial quad in matching
+                _quadBuffer[qlen++] = q;
+                _quadPtr = qptr;
+                return matcher.matchByQuad(_quadBuffer, qlen);
             }
             q = (q << 8) | i;
             i = input[qptr++] & 0xFF;
@@ -1591,8 +1595,10 @@ public class UTF8StreamJsonParser
                 if (i != INT_QUOTE) {
                     return -1;
                 }
-//                q = _padLastQuadNoCheck(q, (-1 << 16));
-                break;
+                // [core#1491]: Need to include partial quad in matching
+                _quadBuffer[qlen++] = q;
+                _quadPtr = qptr;
+                return matcher.matchByQuad(_quadBuffer, qlen);
             }
             q = (q << 8) | i;
             i = input[qptr++] & 0xFF;
@@ -1600,8 +1606,10 @@ public class UTF8StreamJsonParser
                 if (i != INT_QUOTE) {
                     return -1;
                 }
-//                q = _padLastQuadNoCheck(q, (-1 << 24));
-                break;
+                // [core#1491]: Need to include partial quad in matching
+                _quadBuffer[qlen++] = q;
+                _quadPtr = qptr;
+                return matcher.matchByQuad(_quadBuffer, qlen);
             }
             // Nope, no end in sight. Need to grow quad array etc
             if (qlen >= _quadBuffer.length) {
@@ -2750,7 +2758,12 @@ public class UTF8StreamJsonParser
                         _reportInvalidOther(ch2);
                     }
                     ch = (ch << 6) | (ch2 & 0x3F);
-                    if (needed > 2) { // 4 bytes? (need surrogates on output)
+                    // [jackson-core#363]: Surrogates (0xD800 - 0xDFFF) are illegal in UTF-8 for 3-byte sequences
+                    if (needed == 2) {
+                        if (ch >= 0xD800 && ch <= 0xDFFF) {
+                            _reportInvalidUTF8Surrogate(ch);
+                        }
+                    } else { // 4 bytes? (need surrogates on output)
                         ch2 = quads[ix >> 2];
                         byteIx = (ix & 3);
                         ch2 = (ch2 >> ((3 - byteIx) << 3));
@@ -3821,6 +3834,10 @@ public class UTF8StreamJsonParser
             _reportInvalidOther(d & 0xFF, _inputPtr);
         }
         c = (c << 6) | (d & 0x3F);
+        // [jackson-core#363]: Surrogates (0xD800 - 0xDFFF) are illegal in UTF-8
+        if (c >= 0xD800 && c <= 0xDFFF) {
+            _reportInvalidUTF8Surrogate(c);
+        }
         return c;
     }
 
@@ -3837,6 +3854,10 @@ public class UTF8StreamJsonParser
             _reportInvalidOther(d & 0xFF, _inputPtr);
         }
         c = (c << 6) | (d & 0x3F);
+        // [jackson-core#363]: Surrogates (0xD800 - 0xDFFF) are illegal in UTF-8
+        if (c >= 0xD800 && c <= 0xDFFF) {
+            _reportInvalidUTF8Surrogate(c);
+        }
         return c;
     }
 
@@ -3981,6 +4002,13 @@ public class UTF8StreamJsonParser
          * regular Java identifier character rules. It's just a heuristic,
          * nothing fancy here (nor fast).
          */
+        // [core#1180]: Construct JsonLocation at token start BEFORE _loadMore() may change buffer state
+        final int tokenStartPtr = _inputPtr - matchedPart.length();
+        final int col = tokenStartPtr - _currInputRowStart + 1; // 1-based
+        final TokenStreamLocation loc = new TokenStreamLocation(_contentReference(),
+                _currInputProcessed + tokenStartPtr, -1L, // bytes, chars
+                _currInputRow, col);
+
         StringBuilder sb = new StringBuilder(matchedPart);
         while ((_inputPtr < _inputEnd) || _loadMore()) {
             int i = _inputBuffer[_inputPtr++];
@@ -3999,7 +4027,8 @@ public class UTF8StreamJsonParser
                 break;
             }
         }
-        return _reportError("Unrecognized token '%s': was expecting %s", sb, msg);
+        final String fullMsg = String.format("Unrecognized token '%s': was expecting %s", sb, msg);
+        throw _constructReadException(fullMsg, loc);
     }
 
     protected <T> T _reportInvalidChar(int c) throws StreamReadException

@@ -1536,6 +1536,11 @@ public abstract class JsonGenerator
      * (Object, Array, null, Number, String or Boolean).
      * This is done by delegating call to
      * {@link ObjectWriteContext#writeValue(JsonGenerator, Object)}.
+     *<p>
+     * NOTE: this method does not trigger flushing of the generator (none of
+     * {@link JsonGenerator} {@code writeXxx} methods do) in Jackson 3.x:
+     * this is different from behavior in Jackson 2.x where a side effect
+     * of delegation to {@code ObjectMapper} caused flushing to occur.
      *
      * @param pojo Java Object (POJO) value to write
      *
@@ -1551,6 +1556,11 @@ public abstract class JsonGenerator
      * where given {@code TreeNode} is the root) using this generator.
      * This is done by delegating call to
      * {@link ObjectWriteContext#writeTree}.
+     *<p>
+     * NOTE: this method does not trigger flushing of the generator (none of
+     * {@link JsonGenerator} {@code writeXxx} methods do) in Jackson 3.x:
+     * this is different from behavior in Jackson 2.x where a side effect
+     * of delegation to {@code ObjectMapper} caused flushing to occur.
      *
      * @param rootNode {@link TreeNode} to write
      *

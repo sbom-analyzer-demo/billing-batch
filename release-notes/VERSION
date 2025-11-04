@@ -15,6 +15,29 @@ JSON library.
 === Releases ===
 ------------------------------------------------------------------------
 
+3.1.0 (not yet released)
+
+-
+
+3.0.2 (not yet released)
+
+#363: UTF-8 decoding should fail on Surrogate characters (0xD800 - 0xDFFF)
+ (fix by @cowtowncoder, w/ Claude code)
+#708: `FilteringParserDelegate` cannot deserialize empty list
+ (fix by @cowtowncoder, w/ Claude code)
+#1180: `JsonLocation` off for unrecognized tokens
+ (fix by @cowtowncoder, w/ Claude code)
+#1491: Mismatched property name for byte-backed `JsonParser.nextNameMatch(PropertyNameMatcher)`
+ (fix by @cowtowncoder, w/ Claude code)
+#1498: Jackson 3 breaks `FastDoubleParser` - problem with shading
+ (fix by @cowtowncoder, w/ Claude code)
+#1500: Add checks for surrogate pairing for UTF-8 generation
+ (fix by @cowtowncoder, w/ Claude code)
+
+3.0.1 (21-Oct-2025)
+
+No changes since 3.0.0
+
 3.0.0 (03-Oct-2025)
 
 #378: Change default for `TokenStreamFactory.Feature.INTERN_PROPERTY_NAMES` to `false`
@@ -50,7 +73,7 @@ JSON library.
 #1269: Change `JsonFactory.builder()` configuration of `RecyclerPool` to avoid
   allocation default implementation (in 3.0)
 #1364: JSTEP-6: rename `JsonLocation` as `TokenStreamLocation`
-#1373: Change `TreeNode.propertyName()` return type from `Iterator<JsonNode>`
+#1373: Change `TreeNode.propertyNames()` return type from `Iterator<JsonNode>`
   to `Collection<JsonNode>` (3.0)
 #1378: Rename `JsonParser.getText()` as `.getString()` [JSTEP-6]
 #1380: Change 3.0 to use `module-info.java` directly (and not via Moditect)

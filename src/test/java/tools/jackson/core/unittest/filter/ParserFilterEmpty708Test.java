@@ -1,4 +1,4 @@
-package tools.jackson.core.unittest.tofix;
+package tools.jackson.core.unittest.filter;
 
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +10,6 @@ import tools.jackson.core.filter.FilteringParserDelegate;
 import tools.jackson.core.filter.TokenFilter;
 import tools.jackson.core.filter.TokenFilter.Inclusion;
 import tools.jackson.core.json.JsonFactory;
-import tools.jackson.core.testutil.failure.JacksonTestFailureExpected;
 import tools.jackson.core.unittest.*;
 
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -22,7 +21,17 @@ class ParserFilterEmpty708Test extends JacksonCoreTestBase
     static class IncludeAllFilter extends TokenFilter {
         @Override
         public TokenFilter includeProperty(String name) {
-            return this;
+            return TokenFilter.INCLUDE_ALL;
+        }
+
+        @Override
+        public boolean includeEmptyArray(boolean contentsFiltered) {
+            return true;
+        }
+
+        @Override
+        public boolean includeEmptyObject(boolean contentsFiltered) {
+            return true;
         }
     }
 
@@ -35,12 +44,10 @@ class ParserFilterEmpty708Test extends JacksonCoreTestBase
     private final JsonFactory JSON_F = newStreamFactory();
 
     // [core#708]
-    @JacksonTestFailureExpected
     @Test
     void emptyArray() throws Exception
     {
         final String json = "[ ]";
-        // should become: {"value":12}
         JsonParser p0 = _createParser(JSON_F, json);
         JsonParser p = new FilteringParserDelegate(p0,
                 new IncludeAllFilter(),
@@ -55,12 +62,10 @@ class ParserFilterEmpty708Test extends JacksonCoreTestBase
     }
 
     // [core#708]
-    @JacksonTestFailureExpected
     @Test
     void emptyObject() throws Exception
     {
         final String json = "{ }";
-        // should become: {"value":12}
         JsonParser p0 = _createParser(JSON_F, json);
         JsonParser p = new FilteringParserDelegate(p0,
                 new IncludeAllFilter(),

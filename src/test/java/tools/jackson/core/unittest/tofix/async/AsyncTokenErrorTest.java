@@ -16,7 +16,7 @@ class AsyncTokenErrorTest extends AsyncTestBase
     private final JsonFactory JSON_F = newStreamFactory();
 
     @Test
-    void invalidKeywordsStartOk() throws Exception
+    void invalidKeywordsAfterMatching1st() throws Exception
     {
         _doTestInvalidKeyword("nul");
         _doTestInvalidKeyword("nulla");
@@ -29,28 +29,28 @@ class AsyncTokenErrorTest extends AsyncTestBase
         _doTestInvalidKeyword("trueenough");
     }
 
-    @JacksonTestFailureExpected
     @Test
-    void invalidKeywordsStartFail() throws Exception
+    void invalidKeywordsAfterNonMatching1st() throws Exception
     {
         _doTestInvalidKeyword("Null");
         _doTestInvalidKeyword("False");
         _doTestInvalidKeyword("C");
+        _doTestInvalidKeyword("xy");
     }
 
     private void _doTestInvalidKeyword(String value)
     {
+        final String EXP_MAIN = "Unrecognized token '"+value+"'";
+        final String EXP_ALT = "Unexpected character ('"+value.charAt(0)+"' (code";
+        
         String doc = "{ \"key1\" : "+value+" }";
-        // Note that depending on parser impl, we may
-        // get the exception early or late...
         try (AsyncReaderWrapper p = _createParser(doc)) {
             assertToken(JsonToken.START_OBJECT, p.nextToken());
             assertToken(JsonToken.PROPERTY_NAME, p.nextToken());
             p.nextToken();
             fail("Expected an exception for malformed value keyword");
         } catch (StreamReadException jex) {
-            verifyException(jex, "Unrecognized token");
-            verifyException(jex, value);
+            verifyException(jex, EXP_MAIN, EXP_ALT);
         }
 
         // Try as root-level value as well:
@@ -59,11 +59,10 @@ class AsyncTokenErrorTest extends AsyncTestBase
             p.nextToken();
             fail("Expected an exception for malformed value keyword");
         } catch (StreamReadException jex) {
-            verifyException(jex, "Unrecognized token");
-            verifyException(jex, value);
+            verifyException(jex, EXP_MAIN, EXP_ALT);
         }
     }
-
+    
     @JacksonTestFailureExpected
     @Test
     void mangledRootInts() throws Exception

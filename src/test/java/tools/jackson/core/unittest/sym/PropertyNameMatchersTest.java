@@ -3,6 +3,8 @@ package tools.jackson.core.unittest.sym;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import org.junit.jupiter.api.Test;
+
 import tools.jackson.core.sym.PropertyNameMatcher;
 import tools.jackson.core.sym.SimpleNameMatcher;
 import tools.jackson.core.unittest.JacksonCoreTestBase;
@@ -15,6 +17,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class PropertyNameMatchersTest extends JacksonCoreTestBase
 {
+    @Test
     public void testSmallMatching()
     {
         // First small (1 - 4)
@@ -25,6 +28,7 @@ public class PropertyNameMatchersTest extends JacksonCoreTestBase
         _testMatching(null, "b", null);
     }
 
+    @Test
     public void testMediumMatching()
     {
         _testMatching("a", "bcd", "Fittipaldi", "goober");
@@ -39,6 +43,7 @@ public class PropertyNameMatchersTest extends JacksonCoreTestBase
         _testMatching("a", "b", null, "d", "E", "f", "G", null);
     }
 
+    @Test
     public void testLargeMatching()
     {
         // And then generate even bigger

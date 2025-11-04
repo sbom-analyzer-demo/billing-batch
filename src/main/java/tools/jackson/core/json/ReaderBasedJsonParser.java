@@ -3006,6 +3006,13 @@ public class ReaderBasedJsonParser
          * regular Java identifier character rules. It's just a heuristic,
          * nothing fancy here.
          */
+        // [core#1180]: Construct JsonLocation at token start BEFORE _loadMore() may change buffer state
+        final int tokenStartPtr = _inputPtr - matchedPart.length();
+        final int col = tokenStartPtr - _currInputRowStart + 1; // 1-based
+        final TokenStreamLocation loc = new TokenStreamLocation(_contentReference(),
+                -1L, _currInputProcessed + tokenStartPtr,
+                _currInputRow, col);
+
         StringBuilder sb = new StringBuilder(matchedPart);
         while ((_inputPtr < _inputEnd) || _loadMore()) {
             char c = _inputBuffer[_inputPtr];
@@ -3019,7 +3026,8 @@ public class ReaderBasedJsonParser
                 break;
             }
         }
-        throw _constructReadException("Unrecognized token '%s': was expecting %s", sb, msg);
+        final String fullMsg = String.format("Unrecognized token '%s': was expecting %s", sb, msg);
+        throw _constructReadException(fullMsg, loc);
     }
 
     /*

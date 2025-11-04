@@ -1058,6 +1058,20 @@ public abstract class ParserMinimalBase extends JsonParser
     }
 
     /**
+     * Method called to throw an exception for invalid UTF-8 surrogate character: case
+     * where a surrogate character (between U+D800 and U+DFFF) is decoded from UTF-8
+     * bytes (but NOT from JSON entity!)
+     *
+     * @param ch Character code (int) that is invalid surrogate
+     *
+     * @throws StreamReadException Exception that describes problem with UTF-8 surrogate
+     */
+    protected void _reportInvalidUTF8Surrogate(int ch) throws StreamReadException {
+        throw _constructReadException(
+                "Invalid UTF-8: Illegal surrogate character 0x"+Integer.toHexString(ch));
+    }
+
+    /**
      * Factory method used to provide location for cases where we must read
      * and consume a single "wrong" character (to possibly allow error recovery),
      * but need to report accurate location for that character: if so, the

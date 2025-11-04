@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.jupiter.api.Test;
+
 import tools.jackson.core.sym.BinaryNameMatcher;
 import tools.jackson.core.unittest.JacksonCoreTestBase;
 
@@ -12,42 +14,52 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 // Specific tests that try to verify proper hashing goodness
 public class BinaryNameHashTest extends JacksonCoreTestBase
 {
+    @Test
     public void testSuffix1() {
         // 14-Nov-2017, tatu: Slightly optimized hashing with shifting, to reduce
         //   default collision counts
         _testSpillEfficiency(generate("", 99), 77, 16, 6, 0);
     }
 
+    @Test
     public void testSuffix2() {
         _testSpillEfficiency(generate("base", 39), 33, 6, 0, 0);
     }
 
+    @Test
     public void testSuffix3() {
         _testSpillEfficiency(generate("Of ", 139), 122, 16, 1, 0);
     }
 
+    @Test
     public void testSuffix4() {
         _testSpillEfficiency(generate("ACE-", 499), 422, 66, 11, 0);
     }
 
+    @Test
     public void testSuffix5() {
         // similarly, not so great...
         _testSpillEfficiency(generate("SlartiBartFast#", 3000), 1112, 761, 897, 230);
     }
 
+    @Test
     public void testPrefix1() {
         _testSpillEfficiency(generate2("", 99), 77, 16, 6, 0);
     }
+    @Test
     public void testPrefix2() {
         _testSpillEfficiency(generate2("base", 39), 29, 8, 2, 0);
     }
+    @Test
     public void testPrefix3() {
         _testSpillEfficiency(generate2("Of ", 139), 116, 16, 7, 0);
     }
+    @Test
     public void testPrefix4() {
         _testSpillEfficiency(generate2("ACE-", 499), 384, 92, 23, 0);
     }
 
+    @Test
     public void testMisc11() {
         _testSpillEfficiency(Arrays.asList(
                 "player", "uri", "title", "width",
