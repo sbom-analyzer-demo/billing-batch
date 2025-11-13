@@ -3,8 +3,6 @@ package com.fasterxml.jackson.core.filter;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.core.*;
-import com.fasterxml.jackson.core.filter.FilteringParserDelegate;
-import com.fasterxml.jackson.core.filter.TokenFilter;
 import com.fasterxml.jackson.core.filter.TokenFilter.Inclusion;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
