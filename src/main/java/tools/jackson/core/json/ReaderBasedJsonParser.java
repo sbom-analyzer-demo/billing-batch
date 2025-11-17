@@ -1393,6 +1393,9 @@ public class ReaderBasedJsonParser
         // As per #105, need separating space between root values; check here
         if (_streamReadContext.inRoot()) {
             _verifyRootSpace(ch);
+        } else {
+            // [core#105]: Also verify non-root values have valid separator
+            _verifyNonRootSeparator(ch);
         }
         int len = ptr-startPtr;
         _textBuffer.resetWithShared(_inputBuffer, startPtr, len);
@@ -1458,6 +1461,9 @@ public class ReaderBasedJsonParser
         // As per #105, need separating space between root values; check here
         if (_streamReadContext.inRoot()) {
             _verifyRootSpace(ch);
+        } else {
+            // [core#105]: Also verify non-root values have valid separator
+            _verifyNonRootSeparator(ch);
         }
         int len = ptr-startPtr;
         _textBuffer.resetWithShared(_inputBuffer, startPtr, len);
@@ -1515,6 +1521,9 @@ public class ReaderBasedJsonParser
         _inputPtr = ptr;
         if (_streamReadContext.inRoot()) {
             _verifyRootSpace(ch);
+        } else {
+            // [core#105]: Also verify non-root values have valid separator
+            _verifyNonRootSeparator(ch);
         }
         int len = ptr-startPtr;
         _textBuffer.resetWithShared(_inputBuffer, startPtr, len);
@@ -1668,6 +1677,9 @@ public class ReaderBasedJsonParser
             --_inputPtr;
             if (_streamReadContext.inRoot()) {
                 _verifyRootSpace(c);
+            } else {
+                // [core#105]: Also verify non-root values have valid separator
+                _verifyNonRootSeparator(c);
             }
         }
         _textBuffer.setCurrentLength(outPtr);
@@ -1805,6 +1817,40 @@ public class ReaderBasedJsonParser
             return;
         }
         _reportMissingRootWS(ch);
+    }
+
+    // [core#105]: Verify non-root values followed by valid separator
+    private final void _verifyNonRootSeparator(int ch) throws JacksonException
+    {
+        // caller had pushed it back, before calling; reset
+        ++_inputPtr;
+        switch (ch) {
+        // Whitespace is always valid
+        case ' ':
+        case '\t':
+            return;
+        case '\r':
+            --_inputPtr;
+            return;
+        case '\n':
+            ++_currInputRow;
+            _currInputRowStart = _inputPtr;
+            return;
+        // Valid structural characters
+        case ',':  // next value
+        case ']':  // end of array
+        case '}':  // end of object
+            --_inputPtr; // push back for proper processing
+            return;
+        }
+        // Could be a comment - need to check
+        if (ch == '/' || ch == '#') {
+            // Let it fall through to be handled by nextToken() which will
+            // properly validate based on enabled features
+            --_inputPtr;
+            return;
+        }
+        _reportUnexpectedChar(ch, "Expected space, comma, or structural character after number");
     }
 
     /*

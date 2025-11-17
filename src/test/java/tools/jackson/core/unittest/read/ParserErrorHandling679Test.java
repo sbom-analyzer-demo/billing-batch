@@ -1,4 +1,4 @@
-package tools.jackson.core.unittest.tofix;
+package tools.jackson.core.unittest.read;
 
 import org.junit.jupiter.api.Test;
 
@@ -10,32 +10,27 @@ import tools.jackson.core.unittest.testutil.failure.JacksonTestFailureExpected;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
+// Tests for [core#679] - partially fixed by #105 fix, but "/" case still fails
 class ParserErrorHandling679Test
     extends tools.jackson.core.unittest.JacksonCoreTestBase
 {
-    // [core#679]
-    @JacksonTestFailureExpected
     @Test
     void nonRootMangledFloats679Bytes() throws Exception {
         _testNonRootMangledFloats679(MODE_INPUT_STREAM);
         _testNonRootMangledFloats679(MODE_INPUT_STREAM_THROTTLED);
     }
 
-    // [core#679]
-    @JacksonTestFailureExpected
     @Test
     void nonRootMangledFloats679DataInput() throws Exception {
         _testNonRootMangledFloats679(MODE_DATA_INPUT);
     }
 
-    // [core#679]
     @Test
-    @JacksonTestFailureExpected
     void nonRootMangledFloats679Chars() throws Exception {
         _testNonRootMangledFloats679(MODE_READER);
     }
 
-    // [core#679]
+    // "/" tests still fail - need more work to distinguish "/" from "//" and "/*"
     @JacksonTestFailureExpected
     @Test
     void nonRootMangledInts679Bytes() throws Exception {
@@ -43,14 +38,12 @@ class ParserErrorHandling679Test
         _testNonRootMangledInts(MODE_INPUT_STREAM_THROTTLED);
     }
 
-    // [core#679]
     @JacksonTestFailureExpected
     @Test
     void nonRootMangledInts679DataInput() throws Exception {
         _testNonRootMangledInts(MODE_DATA_INPUT);
     }
 
-    // [core#679]
     @JacksonTestFailureExpected
     @Test
     void nonRootMangledInts679Chars() throws Exception {

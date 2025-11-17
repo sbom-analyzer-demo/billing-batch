@@ -1824,6 +1824,9 @@ public class UTF8StreamJsonParser
         // As per #105, need separating space between root values; check here
         if (_streamReadContext.inRoot()) {
             _verifyRootSpace(c);
+        } else {
+            // [core#105]: Also verify non-root values have valid separator
+            _verifyNonRootSeparator(c);
         }
         // And there we have it!
         return resetInt(false, intLen);
@@ -1884,6 +1887,9 @@ public class UTF8StreamJsonParser
         // As per #105, need separating space between root values; check here
         if (_streamReadContext.inRoot()) {
             _verifyRootSpace(c);
+        } else {
+            // [core#105]: Also verify non-root values have valid separator
+            _verifyNonRootSeparator(c);
         }
 
         // And there we have it!
@@ -1920,6 +1926,9 @@ public class UTF8StreamJsonParser
         // As per #105, need separating space between root values; check here
         if (_streamReadContext.inRoot()) {
             _verifyRootSpace(_inputBuffer[_inputPtr] & 0xFF);
+        } else {
+            // [core#105]: Also verify non-root values have valid separator
+            _verifyNonRootSeparator(_inputBuffer[_inputPtr] & 0xFF);
         }
 
         // And there we have it!
@@ -2052,6 +2061,9 @@ public class UTF8StreamJsonParser
             // As per [core#105], need separating space between root values; check here
             if (_streamReadContext.inRoot()) {
                 _verifyRootSpace(c);
+            } else {
+                // [core#105]: Also verify non-root values have valid separator
+                _verifyNonRootSeparator(c);
             }
         }
         _textBuffer.setCurrentLength(outPtr);
@@ -2093,6 +2105,35 @@ public class UTF8StreamJsonParser
             return;
         }
         _reportMissingRootWS(ch);
+    }
+
+    // [core#105]: Verify non-root values followed by valid separator
+    private final void _verifyNonRootSeparator(int ch) throws JacksonException
+    {
+        // caller had pushed it back, before calling; reset
+        ++_inputPtr;
+        switch (ch) {
+        // Whitespace is always valid
+        case ' ':
+        case '\t':
+            return;
+        case '\r':
+            --_inputPtr;
+            return;
+        case '\n':
+            ++_currInputRow;
+            _currInputRowStart = _inputPtr;
+            return;
+        // Valid structural characters
+        case ',':  // next value
+        case ']':  // end of array
+        case '}':  // end of object
+        case '/':  // start of comment (C-style)
+        case '#':  // start of comment (YAML-style)
+            --_inputPtr; // push back for proper processing
+            return;
+        }
+        _reportUnexpectedChar(ch, "Expected space, comma, or structural character after number");
     }
 
     /*

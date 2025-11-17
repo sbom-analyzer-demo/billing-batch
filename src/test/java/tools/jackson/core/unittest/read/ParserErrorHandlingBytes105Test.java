@@ -1,27 +1,23 @@
-package tools.jackson.core.unittest.tofix;
+package tools.jackson.core.unittest.read;
 
 import org.junit.jupiter.api.Test;
 
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
 import tools.jackson.core.exc.StreamReadException;
-import tools.jackson.core.unittest.testutil.failure.JacksonTestFailureExpected;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
-// Failing tests for non-root-token problem
+// Tests for [core#105] ("eager number parsing misses errors")
 class ParserErrorHandlingBytes105Test
     extends tools.jackson.core.unittest.JacksonCoreTestBase
 {
-    // Tests for [core#105] ("eager number parsing misses errors")
-    @JacksonTestFailureExpected
     @Test
     void mangledIntsBytes() throws Exception {
         _testMangledNonRootInts(MODE_INPUT_STREAM);
         _testMangledNonRootInts(MODE_INPUT_STREAM_THROTTLED);
     }
 
-    @JacksonTestFailureExpected
     @Test
     void mangledFloatsBytes() throws Exception {
         _testMangledNonRootFloats(MODE_INPUT_STREAM);

@@ -1060,6 +1060,9 @@ public class UTF8DataInputJsonParser
         _nextByte = c;
         if (_streamReadContext.inRoot()) {
             _verifyRootSpace();
+        } else {
+            // [core#105]: Also verify non-root values have valid separator
+            _verifyNonRootSeparator();
         }
         // And there we have it!
         return resetInt(false, intLen);
@@ -1121,6 +1124,9 @@ public class UTF8DataInputJsonParser
         _nextByte = c;
         if (_streamReadContext.inRoot()) {
             _verifyRootSpace();
+        } else {
+            // [core#105]: Also verify non-root values have valid separator
+            _verifyNonRootSeparator();
         }
         // And there we have it!
         return resetInt(negative, intLen);
@@ -1226,6 +1232,9 @@ public class UTF8DataInputJsonParser
         _nextByte = c;
         if (_streamReadContext.inRoot()) {
             _verifyRootSpace();
+        } else {
+            // [core#105]: Also verify non-root values have valid separator
+            _verifyNonRootSeparator();
         }
         _textBuffer.setCurrentLength(outPtr);
 
@@ -1252,6 +1261,26 @@ public class UTF8DataInputJsonParser
             return;
         }
         _reportMissingRootWS(ch);
+    }
+
+    // [core#105]: Verify non-root values followed by valid separator
+    private final void _verifyNonRootSeparator() throws JacksonException
+    {
+        int ch = _nextByte;
+        if (ch <= INT_SPACE) {
+            _nextByte = -1;
+            if (ch == INT_CR || ch == INT_LF) {
+                ++_currInputRow;
+            }
+            return;
+        }
+        // Valid structural characters and comment starts
+        if (ch == INT_COMMA || ch == INT_RBRACKET || ch == INT_RCURLY
+                || ch == INT_SLASH || ch == INT_HASH) {
+            // Keep _nextByte set for proper processing
+            return;
+        }
+        _reportUnexpectedChar(ch, "Expected space, comma, or structural character after number");
     }
 
     /*
