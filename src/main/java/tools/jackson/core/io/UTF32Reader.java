@@ -116,7 +116,7 @@ public class UTF32Reader extends Reader
         if (_buffer == null) { return -1; }
         if (len < 1) { return len; }
         // Let's then ensure there's enough room...
-        if (start < 0 || (start+len) > cbuf.length) {
+        if (start < 0 || len < 0 || start > (cbuf.length - len)) {
             reportBounds(cbuf, start, len);
         }
 
