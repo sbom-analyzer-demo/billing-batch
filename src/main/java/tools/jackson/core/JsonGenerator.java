@@ -1205,30 +1205,28 @@ public abstract class JsonGenerator
 
     /**
      * Write method that can be used for custom numeric types that can
-     * not be (easily?) converted to "standard" Java number types.
+     * not be (easily?) converted to "standard" Java number types; or, for
+     * special formatting with formats that allow this (CSV).
      * Because numbers are not surrounded by double quotes, regular
      * {@link #writeString} method cannot be used; nor
      * {@link #writeRaw} because that does not properly handle
      * value separators needed in Array or Object contexts.
      *<p>
      * Note: because of lack of type safety, some generator
-     * implementations may not be able to implement this
-     * method. For example, if a binary JSON format is used,
-     * it may require type information for encoding; similarly
-     * for generator-wrappers around Java objects or JSON nodes.
+     * implementations will not be able to implement this method.
+     * For example, some binary formats require type information for
+     * encoding; similarly for generator-wrappers around Java objects or {@link TreeNode}s.
      * If implementation does not implement this method,
-     * it needs to throw {@link UnsupportedOperationException}.
+     * it should a {@link StreamWriteException}).
      *
-     * @param encodedValue Textual (possibly format) number representation to write
+     * @param encodedValue Textual (possibly formatted) number representation to write
      *
      * @return This generator, to allow call chaining
      *
-     * @throws UnsupportedOperationException If underlying data format does not
-     *   support numbers serialized textually AND if generator is not allowed
-     *   to just output a String instead (Schema-based formats may require actual
-     *   number, for example)
      * @throws JacksonIOException if there is an underlying I/O problem
-     * @throws StreamWriteException for problems in encoding token stream
+     * @throws StreamWriteException for problems in encoding token stream, for example
+     *   if underlying data format does not support numbers serialized textually (especially
+     *   Schema-based formats that require actual number type)
      */
     public abstract JsonGenerator writeNumber(String encodedValue) throws JacksonException;
 
@@ -2401,8 +2399,6 @@ public abstract class JsonGenerator
     /*
     /**********************************************************************
     /* Helper methods for sub-classes
-    /*
-    /* NOTE: some could be moved out in 3.0 if there was "JsonGeneratorMinimalBase"
     /**********************************************************************
      */
 

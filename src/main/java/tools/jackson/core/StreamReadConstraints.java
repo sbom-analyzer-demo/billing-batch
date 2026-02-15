@@ -15,7 +15,7 @@ import tools.jackson.core.exc.StreamReadException;
  * <ul>
  *  <li>Maximum Number value length: default 1000 (see {@link #DEFAULT_MAX_NUM_LEN})
  *   </li>
- *  <li>Maximum String value length: default 20_000_000 (see {@link #DEFAULT_MAX_STRING_LEN})
+ *  <li>Maximum String value length: default 100_000_000 (see {@link #DEFAULT_MAX_STRING_LEN})
  *   </li>
  *  <li>Maximum Property name length: default 50_000 (see {@link #DEFAULT_MAX_NAME_LEN})
  *   </li>
@@ -64,7 +64,7 @@ public class StreamReadConstraints
      * Default setting for maximum string length: see {@link Builder#maxStringLength(int)}
      * for details.
      */
-    public static final int DEFAULT_MAX_STRING_LEN = 20_000_000;
+    public static final int DEFAULT_MAX_STRING_LEN = 100_000_000;
 
     /**
      * Default setting for maximum name length: see {@link Builder#maxNameLength(int)}
@@ -215,7 +215,8 @@ public class StreamReadConstraints
 
         /**
          * Sets the maximum string length (in chars or bytes, depending on input context).
-         * The default is 20,000,000. This limit is not exact, the limit is applied when we increase
+         * The default is {@link #DEFAULT_MAX_STRING_LEN}. This limit is not exact, the limit
+         * is applied when we increase
          * internal buffer sizes and an exception will happen at sizes greater than this limit. Some
          * text values that are a little bigger than the limit may be treated as valid but no text
          * values with sizes less than or equal to this limit will be treated as invalid.
@@ -223,7 +224,8 @@ public class StreamReadConstraints
          *   Setting this value to lower than the {@link #maxNumberLength(int)} is not recommended.
          * </p>
          *<p>
-         * NOTE: Jackson 2.15.0 initially used a lower setting (5_000_000).
+         * NOTE: Jackson 2.15.0 initially used a lower setting ({@code 5,000,000}); and versions
+         * up to 3.0 {@code 20,000,000}.
          *
          * @param maxStringLen the maximum string length (in chars or bytes, depending on input context)
          *
@@ -249,7 +251,6 @@ public class StreamReadConstraints
          *
          * @return this builder
          * @throws IllegalArgumentException if the maxStringLen is set to a negative value
-         * @since 2.16.0
          */
         public Builder maxNameLength(final int maxNameLen) {
             if (maxNameLen < 0) {

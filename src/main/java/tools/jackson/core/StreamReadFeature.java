@@ -95,7 +95,7 @@ public enum StreamReadFeature
      * printed, and not the whole contents. Further, many source reference types cannot
      * necessarily access contents (like streams), so only type is indicated, not contents.
      *<p>
-     * Feature is disabled by default for security reason (to avoid leaking additional source
+     * Feature is disabled by default for security reasons (to avoid leaking additional source
      * information), meaning that "source reference" information is NOT passed
      * and none of source content will be included in {@link TokenStreamLocation}
      * constructed either when requested explicitly, or when needed for an exception.

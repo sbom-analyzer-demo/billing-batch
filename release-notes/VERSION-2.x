@@ -14,7 +14,7 @@ a pure JSON library.
 === Releases ===
 ------------------------------------------------------------------------
 
-2.21.0 (not yet released)
+2.21.0 (18-Jan-2026)
 
 #363: UTF-8 decoding should fail on Surrogate characters (0xD800 - 0xDFFF)
  (fix by @cowtowncoder, w/ Claude code)
@@ -22,8 +22,9 @@ a pure JSON library.
  (reported by @xiazuojie)
  (fix by @cowtowncoder, w/ Claude code)
 #1180: `JsonLocation` off for unrecognized tokens
-(fix by @cowtowncoder, w/ Claude code)
-#1418: `TokenFilter#includeEmptyArray()` causes an error in some cases where an object element is filtered
+ (fix by @cowtowncoder, w/ Claude code)
+#1418: `TokenFilter#includeEmptyArray()` causes an error in some cases where
+  an object element is filtered
  (reported by @21Joakim)
  (fix by @cowtowncoder, w/ Claude code)
 #1470: Add method `copyCurrentStructureExact()` to `JsonGenerator`

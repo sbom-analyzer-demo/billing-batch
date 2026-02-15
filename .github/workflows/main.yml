@@ -11,7 +11,6 @@ on:
     - "release-notes/*"
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   build:
@@ -32,9 +31,17 @@ jobs:
     env:
       JAVA_OPTS: "-XX:+TieredCompilation -XX:TieredStopAtLevel=1"
     steps:
-    - uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
-    - name: Set up JDK
-      uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+    - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+    - name: Set up JDK (without deployment credentials)
+      if: ${{ github.event_name == 'pull_request' || github.repository != 'FasterXML/jackson-core' }}
+      uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
+      with:
+        distribution: 'temurin'
+        java-version: ${{ matrix.java_version }}
+        cache: 'maven'
+    - name: Set up JDK with deployment credentials
+      if: ${{ github.event_name != 'pull_request' && github.repository == 'FasterXML/jackson-core' }}
+      uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
       with:
         distribution: 'temurin'
         java-version: ${{ matrix.java_version }}
@@ -56,7 +63,7 @@ jobs:
       if: ${{ matrix.release_build }}
       run: ./mvnw -B -q -ff -ntp -DskipTests animal-sniffer:check
     - name: Deploy snapshot
-      if: ${{ matrix.release_build && github.event_name != 'pull_request' && endsWith(steps.projectVersion.outputs.version, '-SNAPSHOT') }}
+      if: ${{ matrix.release_build && github.event_name != 'pull_request' && github.repository == 'FasterXML/jackson-core' && endsWith(steps.projectVersion.outputs.version, '-SNAPSHOT') }}
       env:
         CI_DEPLOY_USERNAME: ${{ secrets.CENTRAL_DEPLOY_USERNAME }}
         CI_DEPLOY_PASSWORD: ${{ secrets.CENTRAL_DEPLOY_PASSWORD }}
@@ -66,38 +73,28 @@ jobs:
       if: ${{ matrix.release_build }}
       run: ./mvnw -B -q -ff -ntp test jacoco:report
     - name: Publish code coverage
-      if: ${{ matrix.release_build && github.event_name != 'pull_request' }}
-      uses: codecov/codecov-action@5a1091511ad55cbe89839c7260b706298ca349f7 # v5.5.1
+      if: ${{ matrix.release_build && github.event_name != 'pull_request' && github.repository == 'FasterXML/jackson-core' }}
+      uses: codecov/codecov-action@671740ac38dd9b0130fbe1cec585b89eea48d3de # v5.5.2
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./target/site/jacoco/jacoco.xml
         flags: unittests
     - name: Upload coverage report as artifact
-      if: ${{ matrix.release_build && github.event_name != 'pull_request' }}
-      uses: actions/upload-artifact@v4
+      if: ${{ matrix.release_build && github.event_name != 'pull_request' && github.repository == 'FasterXML/jackson-core' }}
+      uses: actions/upload-artifact@v6
       with:
         name: jacoco-report
         path: target/site/jacoco/jacoco.csv
         retention-days: 30
     - name: Download base branch coverage
       if: ${{ matrix.release_build && github.event_name == 'pull_request' }}
-      uses: dawidd6/action-download-artifact@v6
+      uses: dawidd6/action-download-artifact@v13
       continue-on-error: true
       with:
         workflow: main.yml
         branch: ${{ github.event.pull_request.base.ref }}
         name: jacoco-report
         path: base-coverage/
-    - name: Add coverage delta report to PR
-      if: ${{ matrix.release_build && github.event_name == 'pull_request' }}
-      uses: madrapps/jacoco-report@v1.7.1
-      with:
-        paths: ${{ github.workspace }}/target/site/jacoco/jacoco.xml
-        token: ${{ secrets.GITHUB_TOKEN }}
-        min-coverage-overall: 40
-        min-coverage-changed-files: 60
-        title: ':test_tube: Coverage Report'
-        update-comment: true
     - name: Generate coverage summary
       if: ${{ matrix.release_build && github.event_name == 'pull_request' }}
       id: jacoco
@@ -107,72 +104,73 @@ jobs:
         generate-coverage-badge: false
         generate-branches-badge: false
         generate-summary: true
-    - name: Add coverage comment to PR
+    - name: Generate coverage comment
       if: ${{ matrix.release_build && github.event_name == 'pull_request' }}
       run: |
-        # Convert decimal to percentage and round to 1 decimal place
-        COVERAGE=$(awk -v cov="${{ steps.jacoco.outputs.coverage }}" 'BEGIN { printf "%.1f", cov * 100 }')
-        BRANCHES=$(awk -v br="${{ steps.jacoco.outputs.branches }}" 'BEGIN { printf "%.1f", br * 100 }')
+        # Helper functions
+        parse_coverage() {
+          local csv_file=$1 col_missed=$2 col_covered=$3
+          awk -F',' -v m="$col_missed" -v c="$col_covered" \
+            'NR>1 && $1=="Jackson-core" {
+              total_missed += $m;
+              total_covered += $c;
+            }
+            END {
+              if (total_missed + total_covered > 0)
+                printf "%.2f", (total_covered * 100.0) / (total_missed + total_covered)
+            }' "$csv_file"
+        }
 
-        # Check if base coverage artifact was downloaded
+        format_delta() {
+          local delta=$1
+          if awk -v d="$delta" 'BEGIN { exit (d >= 0) ? 0 : 1 }'; then
+            echo "+${delta}%|📈"
+          else
+            echo "${delta}%|📉"
+          fi
+        }
+
+        get_color() {
+          awk -v v="$1" 'BEGIN {
+            if (v >= 80) print "brightgreen"
+            else if (v >= 60) print "green"
+            else if (v >= 40) print "yellow"
+            else print "red"
+          }'
+        }
+
+        # Convert decimal to percentage and round to 2 decimal places
+        COVERAGE=$(awk -v cov="${{ steps.jacoco.outputs.coverage }}" 'BEGIN { printf "%.2f", cov * 100 }')
+        BRANCHES=$(awk -v br="${{ steps.jacoco.outputs.branches }}" 'BEGIN { printf "%.2f", br * 100 }')
+
+        # Check if base coverage artifact was downloaded and calculate deltas
+        HAS_DELTA=false
         if [ -f "base-coverage/jacoco.csv" ]; then
           echo "Found base branch coverage from artifact"
-          BASE_CSV="base-coverage/jacoco.csv"
+          BASE_COVERAGE=$(parse_coverage "base-coverage/jacoco.csv" 4 5)
+          BASE_BRANCHES=$(parse_coverage "base-coverage/jacoco.csv" 6 7)
 
-          # Parse base branch coverage
-          BASE_COVERAGE=$(awk -F',' 'NR>1 && $1=="Jackson-core" {
-            missed=$4; covered=$5;
-            if (missed + covered > 0) printf "%.1f", (covered * 100.0) / (missed + covered)
-          }' "$BASE_CSV" | head -1)
-          BASE_BRANCHES=$(awk -F',' 'NR>1 && $1=="Jackson-core" {
-            missed=$6; covered=$7;
-            if (missed + covered > 0) printf "%.1f", (covered * 100.0) / (missed + covered)
-          }' "$BASE_CSV" | head -1)
+          echo "DEBUG: Current coverage: ${COVERAGE}%, branches: ${BRANCHES}%"
+          echo "DEBUG: Base coverage: ${BASE_COVERAGE}%, branches: ${BASE_BRANCHES}%"
 
           if [ -n "$BASE_COVERAGE" ] && [ -n "$BASE_BRANCHES" ]; then
-            # Calculate deltas
-            COV_DELTA=$(awk -v curr="$COVERAGE" -v base="$BASE_COVERAGE" 'BEGIN { printf "%.1f", curr - base }')
-            BR_DELTA=$(awk -v curr="$BRANCHES" -v base="$BASE_BRANCHES" 'BEGIN { printf "%.1f", curr - base }')
+            COV_DELTA=$(awk -v curr="$COVERAGE" -v base="$BASE_COVERAGE" 'BEGIN { printf "%.3f", curr - base }')
+            BR_DELTA=$(awk -v curr="$BRANCHES" -v base="$BASE_BRANCHES" 'BEGIN { printf "%.3f", curr - base }')
 
-            # Format delta strings with + or - signs
-            if awk -v delta="$COV_DELTA" 'BEGIN { exit (delta >= 0) ? 0 : 1 }'; then
-              COV_DELTA_STR="+${COV_DELTA}%"
-              COV_DELTA_EMOJI="📈"
-            else
-              COV_DELTA_STR="${COV_DELTA}%"
-              COV_DELTA_EMOJI="📉"
-            fi
+            echo "DEBUG: Coverage delta: ${COV_DELTA}%, branches delta: ${BR_DELTA}%"
 
-            if awk -v delta="$BR_DELTA" 'BEGIN { exit (delta >= 0) ? 0 : 1 }'; then
-              BR_DELTA_STR="+${BR_DELTA}%"
-              BR_DELTA_EMOJI="📈"
-            else
-              BR_DELTA_STR="${BR_DELTA}%"
-              BR_DELTA_EMOJI="📉"
-            fi
+            IFS='|' read -r COV_DELTA_STR COV_DELTA_EMOJI <<< "$(format_delta "$COV_DELTA")"
+            IFS='|' read -r BR_DELTA_STR BR_DELTA_EMOJI <<< "$(format_delta "$BR_DELTA")"
 
             HAS_DELTA=true
-          else
-            HAS_DELTA=false
           fi
         else
-          HAS_DELTA=false
+          echo "No base branch coverage artifact found"
         fi
 
-        # Determine color for coverage badge using awk (more portable than bc)
-        COV_COLOR=$(awk -v cov="$COVERAGE" 'BEGIN {
-          if (cov >= 80) print "brightgreen"
-          else if (cov >= 60) print "green"
-          else if (cov >= 40) print "yellow"
-          else print "red"
-        }')
-
-        BR_COLOR=$(awk -v br="$BRANCHES" 'BEGIN {
-          if (br >= 80) print "brightgreen"
-          else if (br >= 60) print "green"
-          else if (br >= 40) print "yellow"
-          else print "red"
-        }')
+        # Determine badge colors
+        COV_COLOR=$(get_color "$COVERAGE")
+        BR_COLOR=$(get_color "$BRANCHES")
 
         # Build coverage table with or without deltas
         if [ "$HAS_DELTA" = "true" ]; then
@@ -191,21 +189,21 @@ jobs:
 
         $COVERAGE_TABLE
 
-        > Overall project coverage from JaCoCo test results
+        > Overall project coverage from JaCoCo test results. Change values compare against the latest base branch build.
 
         <!-- jacoco-coverage-comment -->"
 
-        # Find and delete existing coverage comment
-        COMMENT_ID=$(gh pr view ${{ github.event.pull_request.number }} --json comments --jq '.comments[] | select(.body | contains("<!-- jacoco-coverage-comment -->")) | .id' | head -1) || true
-
-        if [ -n "$COMMENT_ID" ]; then
-          gh api -X DELETE "repos/${{ github.repository }}/issues/comments/$COMMENT_ID" || true
-        fi
-
-        # Post new comment
-        gh pr comment ${{ github.event.pull_request.number }} --body "$COMMENT_BODY"
-      env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Save comment for the workflow_run
+        mkdir -p pr-comment
+        echo "${{ github.event.pull_request.number }}" > pr-comment/pr-number.txt
+        echo "$COMMENT_BODY" > pr-comment/comment-body.txt
+    - name: Upload PR comment
+      if: ${{ matrix.release_build && github.event_name == 'pull_request' }}
+      uses: actions/upload-artifact@v6
+      with:
+        name: pr-comment
+        path: pr-comment/
+        retention-days: 1
 
   trigger-dep-builds-v2:
     name: Trigger downstream builds for v2

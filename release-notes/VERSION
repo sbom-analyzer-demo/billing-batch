@@ -15,7 +15,7 @@ JSON library.
 === Releases ===
 ------------------------------------------------------------------------
 
-3.1.0 (not yet released)
+3.1.0-rc1 (27-Jan-2026)
 
 #784: Optional leading plus sign not included in textual value of any
   integral nor all floating-point numbers
@@ -25,8 +25,17 @@ JSON library.
  (fix by @cowtowncoder, w/ Claude code)
 #1514: Additional configuration to closer match Jackson 2 behavior
  (contributed by Nicholas R)
+#1527: `TokenStreamFactory.createNonBlockingByteBufferParser()` return type wrong
+ (reported by Henri B)
+ (fixed by @pjfanning)
+#1534: Change `TreeCodec` to take type parameter `T extends TreeNode`
+#1538: Increase default `StreamReadConstraints.maxStringLength` to 100M (from 20M)
+#1541: Unexpected Illegal surrogate character when parsing field names
+ (reported by Afzal N)
+- Updated `JsonGenerator.writeNumber(String)` javadocs with more specific info
+  on handling by generators that cannot support the method.
 
-3.0.4 (not yet released)
+3.0.4 (21-Jan-2026)
 
 #1516: `UTF8StreamJsonParser` sometimes may cause `ArrayIndexOutOfBoundsException`
  (reported by @haihai514)

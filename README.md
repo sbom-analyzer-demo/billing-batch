@@ -27,10 +27,9 @@ Project contains versions 2.0 and above: source code for earlier (1.x) versions 
 | ---- | ------ |
 | Build (CI) | [![Build (github)](https://github.com/FasterXML/jackson-core/actions/workflows/main.yml/badge.svg)](https://github.com/FasterXML/jackson-core/actions/workflows/main.yml) |
 | Artifact | ![Maven Central](https://img.shields.io/maven-central/v/tools.jackson.core/jackson-core) |
-| OSS Sponsorship | [![Tidelift](https://tidelift.com/badges/package/maven/tools.jackson.core:jackson-core)](https://tidelift.com/subscription/pkg/maven-com-fasterxml-jackson-core-jackson-core?utm_source=maven-com-fasterxml-jackson-core-jackson-core&utm_medium=referral&utm_campaign=readme) |
+| OSS Sponsorship | [![Tidelift](https://tidelift.com/badges/package/maven/com.fasterxml.jackson.core:jackson-core)](https://tidelift.com/subscription/pkg/maven-com-fasterxml-jackson-core-jackson-core?utm_source=maven-com-fasterxml-jackson-core-jackson-core&utm_medium=referral&utm_campaign=readme) |
 | Javadocs | [![Javadoc](https://javadoc.io/badge/tools.jackson.core/jackson-core.svg)](https://javadoc.io/doc/tools.jackson.core/jackson-core) |
 | Code coverage (3.0) | [![codecov.io](https://codecov.io/github/FasterXML/jackson-core/coverage.svg?branch=3.x)](https://codecov.io/github/FasterXML/jackson-core?branch=3.x) |
-| CodeQ (ClusterFuzz) | [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/jackson-core.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:jackson-core) |
 | OpenSSF Score | [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/FasterXML/jackson-core/badge)](https://securityscorecards.dev/viewer/?uri=github.com/FasterXML/jackson-core) |
 
 # Get it!
@@ -124,9 +123,9 @@ Implemented limits are:
 * Maximum Number token length (2.15+): (see https://github.com/FasterXML/jackson-core/issues/815)
     * Default: Maximum 1000 for both integral and floating-point numbers.
 * Maximum String value length (2.15+): (see https://github.com/FasterXML/jackson-core/issues/863)
-    * Default: 20_000_000 (20 million) (since 2.15.1; 2.15.0 had lower limit, 5 million)
+    * Default: 100_000_000 (100 million) (since 3.1; was 20 million in 2.x/3.0)
 * Maximum Input nesting depth (2.15+): (see https://github.com/FasterXML/jackson-core/pull/943)
-    * Default: 1000 levels
+    * Default: 500 levels (3.x) (was 1000 levels in 2.x)
 * Maximum Property name length (2.16+): (see https://github.com/FasterXML/jackson-core/issues/1047)
     * Default: 50,000
 * Maximum Document length (2.16+): (see https://github.com/FasterXML/jackson-core/issues/1046)
