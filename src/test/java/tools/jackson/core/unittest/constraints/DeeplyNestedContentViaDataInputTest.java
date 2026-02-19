@@ -22,7 +22,7 @@ class DeeplyNestedContentViaDataInputTest {
     private final JsonFactory factory = new JsonFactory();
 
     // 19-Feb-2026, tatu: Regression; works in 2.x
-    @JacksonTestFailureExpected
+    //@JacksonTestFailureExpected
     @Test
     void dataInputParserBypassesNestingDepth() throws Exception {
         byte[] data = buildNestedArrays(TEST_NESTING_DEPTH);
