@@ -14,13 +14,13 @@ jobs:
     steps:
     - name: Build Fuzzers
       id: build
-      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@master
+      uses: google/oss-fuzz/infra/cifuzz/actions/build_fuzzers@8fcdccb37d9a2ac26960191bc8b41d181619ad0e # master (2026-02-19)
       with:
         oss-fuzz-project-name: 'jackson-core'
         dry-run: false
         language: jvm
     - name: Run Fuzzers
-      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@master
+      uses: google/oss-fuzz/infra/cifuzz/actions/run_fuzzers@8fcdccb37d9a2ac26960191bc8b41d181619ad0e # master (2026-02-19)
       with:
         oss-fuzz-project-name: 'jackson-core'
         fuzz-seconds: 1200
