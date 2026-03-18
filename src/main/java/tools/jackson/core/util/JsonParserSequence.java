@@ -197,6 +197,10 @@ public class JsonParserSequence extends JsonParserDelegate
         String str = nextName();
         if (str != null) {
             // 15-Nov-2017, tatu: Cannot assume intern()ing aspects when delegating...
+            // 18-Mar-2026, tatu: [databind#5811] Guard against null matcher
+            if (matcher == null) {
+                return PropertyNameMatcher.MATCH_UNKNOWN_NAME;
+            }
             return matcher.matchName(str);
         }
         if (hasToken(JsonToken.END_OBJECT)) {

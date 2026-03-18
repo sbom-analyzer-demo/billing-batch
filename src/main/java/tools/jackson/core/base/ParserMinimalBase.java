@@ -484,6 +484,10 @@ public abstract class ParserMinimalBase extends JsonParser
     public int nextNameMatch(PropertyNameMatcher matcher) throws JacksonException {
         String str = nextName();
         if (str != null) {
+            // 18-Mar-2026, tatu: [databind#5811] Guard against null matcher
+            if (matcher == null) {
+                return PropertyNameMatcher.MATCH_UNKNOWN_NAME;
+            }
             return matcher.matchName(str);
         }
         if (_currToken == JsonToken.END_OBJECT) {
@@ -495,6 +499,10 @@ public abstract class ParserMinimalBase extends JsonParser
     @Override
     public int currentNameMatch(PropertyNameMatcher matcher) {
         if (_currToken == JsonToken.PROPERTY_NAME) {
+            // 18-Mar-2026, tatu: [databind#5811] Guard against null matcher
+            if (matcher == null) {
+                return PropertyNameMatcher.MATCH_UNKNOWN_NAME;
+            }
             return matcher.matchName(currentName());
         }
         if (_currToken == JsonToken.END_OBJECT) {

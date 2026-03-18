@@ -1163,20 +1163,27 @@ public class UTF8StreamJsonParser
         _updateNameLocation();
 
         String name;
-        int match = _matchName(matcher, i);
-        if (match >= 0) { // gotcha! (expected case)
-            _inputPtr = _quadPtr;
-            name = matcher.nameLookup()[match];
-        } else {
-            // !!! TODO 12-Dec-2017, tatu: Should probably try to use symbol table
-            //   for cases where quads were decoded ok, but no match?
-            /*
-            if (match == PropertyNameMatcher.MATCH_UNKNOWN_NAME) {
-                throw new RuntimeException("No name match!");
-            }
-            */
+        // 18-Mar-2026, tatu: [databind#5811] Guard against null matcher
+        int match;
+        if (matcher == null) {
             name = _parseName(i);
-            match = matcher.matchName(name);
+            match = PropertyNameMatcher.MATCH_UNKNOWN_NAME;
+        } else {
+            match = _matchName(matcher, i);
+            if (match >= 0) { // gotcha! (expected case)
+                _inputPtr = _quadPtr;
+                name = matcher.nameLookup()[match];
+            } else {
+                // !!! TODO 12-Dec-2017, tatu: Should probably try to use symbol table
+                //   for cases where quads were decoded ok, but no match?
+                /*
+                if (match == PropertyNameMatcher.MATCH_UNKNOWN_NAME) {
+                    throw new RuntimeException("No name match!");
+                }
+                */
+                name = _parseName(i);
+                match = matcher.matchName(name);
+            }
         }
 
         _streamReadContext.setCurrentName(name);

@@ -2,6 +2,8 @@ package tools.jackson.core.unittest.read;
 
 import java.util.*;
 
+import org.junit.jupiter.api.Test;
+
 import tools.jackson.core.JsonParser;
 import tools.jackson.core.JsonToken;
 import tools.jackson.core.json.JsonFactory;
@@ -32,6 +34,7 @@ public class NextNameWithMatcherTest
     private final String DOC_1_CASE_MISMATCH = a2q(
             "{ 'A' : 4, 'ENABLED' : true, 'LongerName' : 'Billy-Bob Burger', 'extra' : [0 ], 'otherStuff3' : 0.25 }");
 
+    @Test
     public void testSimpleCaseSensitive() throws Exception
     {
         _testSimpleCaseSensitive(MODE_INPUT_STREAM);
@@ -45,6 +48,7 @@ public class NextNameWithMatcherTest
         _verifyDoc1(createParser(mode, DOC_1), MATCHER_CS_1, NAMES_1);
     }
 
+    @Test
     public void testSimpleCaseInsensitive() throws Exception
     {
         _testSimpleCaseInsensitive(MODE_INPUT_STREAM);
@@ -59,6 +63,81 @@ public class NextNameWithMatcherTest
         _verifyDoc1(createParser(mode, DOC_1), MATCHER_CI_1, NAMES_1);
         // but then mis-cased one too:
         _verifyDoc1(createParser(mode, DOC_1_CASE_MISMATCH), MATCHER_CI_1, NAMES_1_CASE_MISMATCH);
+    }
+
+    // [databind#5811] Guard against null PropertyNameMatcher in nextNameMatch/currentNameMatch
+    @Test
+    public void testNullMatcherNextNameMatch() throws Exception
+    {
+        _testNullMatcherNextNameMatch(MODE_INPUT_STREAM);
+        _testNullMatcherNextNameMatch(MODE_INPUT_STREAM_THROTTLED);
+        _testNullMatcherNextNameMatch(MODE_DATA_INPUT);
+        _testNullMatcherNextNameMatch(MODE_READER);
+    }
+
+    private void _testNullMatcherNextNameMatch(int mode) throws Exception
+    {
+        final String doc = a2q("{ 'a' : 1, 'b' : 2 }");
+        try (JsonParser p = createParser(mode, doc)) {
+            // START_OBJECT is not a name token -> MATCH_ODD_TOKEN
+            assertEquals(PropertyNameMatcher.MATCH_ODD_TOKEN, p.nextNameMatch(null));
+            assertToken(JsonToken.START_OBJECT, p.currentToken());
+
+            // property name 'a' -> MATCH_UNKNOWN_NAME (null matcher can't match anything)
+            assertEquals(PropertyNameMatcher.MATCH_UNKNOWN_NAME, p.nextNameMatch(null));
+            assertToken(JsonToken.PROPERTY_NAME, p.currentToken());
+            assertEquals("a", p.currentName());
+
+            // value '1' -> MATCH_ODD_TOKEN
+            assertEquals(PropertyNameMatcher.MATCH_ODD_TOKEN, p.nextNameMatch(null));
+            assertToken(JsonToken.VALUE_NUMBER_INT, p.currentToken());
+
+            // property name 'b' -> MATCH_UNKNOWN_NAME
+            assertEquals(PropertyNameMatcher.MATCH_UNKNOWN_NAME, p.nextNameMatch(null));
+            assertToken(JsonToken.PROPERTY_NAME, p.currentToken());
+            assertEquals("b", p.currentName());
+
+            // value '2' -> MATCH_ODD_TOKEN
+            assertEquals(PropertyNameMatcher.MATCH_ODD_TOKEN, p.nextNameMatch(null));
+            assertToken(JsonToken.VALUE_NUMBER_INT, p.currentToken());
+
+            // END_OBJECT -> MATCH_END_OBJECT
+            assertEquals(PropertyNameMatcher.MATCH_END_OBJECT, p.nextNameMatch(null));
+            assertToken(JsonToken.END_OBJECT, p.currentToken());
+        }
+    }
+
+    // [databind#5811] Guard against null PropertyNameMatcher in currentNameMatch
+    @Test
+    public void testNullMatcherCurrentNameMatch() throws Exception
+    {
+        _testNullMatcherCurrentNameMatch(MODE_INPUT_STREAM);
+        _testNullMatcherCurrentNameMatch(MODE_INPUT_STREAM_THROTTLED);
+        _testNullMatcherCurrentNameMatch(MODE_DATA_INPUT);
+        _testNullMatcherCurrentNameMatch(MODE_READER);
+    }
+
+    private void _testNullMatcherCurrentNameMatch(int mode) throws Exception
+    {
+        final String doc = a2q("{ 'a' : 1 }");
+        try (JsonParser p = createParser(mode, doc)) {
+            assertToken(JsonToken.START_OBJECT, p.nextToken());
+            // At START_OBJECT -> MATCH_ODD_TOKEN
+            assertEquals(PropertyNameMatcher.MATCH_ODD_TOKEN, p.currentNameMatch(null));
+
+            assertToken(JsonToken.PROPERTY_NAME, p.nextToken());
+            // At PROPERTY_NAME -> MATCH_UNKNOWN_NAME (null matcher can't match)
+            assertEquals(PropertyNameMatcher.MATCH_UNKNOWN_NAME, p.currentNameMatch(null));
+            assertEquals("a", p.currentName());
+
+            assertToken(JsonToken.VALUE_NUMBER_INT, p.nextToken());
+            // At value token -> MATCH_ODD_TOKEN
+            assertEquals(PropertyNameMatcher.MATCH_ODD_TOKEN, p.currentNameMatch(null));
+
+            assertToken(JsonToken.END_OBJECT, p.nextToken());
+            // At END_OBJECT -> MATCH_END_OBJECT
+            assertEquals(PropertyNameMatcher.MATCH_END_OBJECT, p.currentNameMatch(null));
+        }
     }
 
     private void _verifyDoc1(JsonParser p, PropertyNameMatcher matcher,
