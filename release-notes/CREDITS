@@ -56,6 +56,9 @@ Revanth Meesala (@revanthmeesala)
   (3.1.6)
 
 Lee Dongnyoung (@DongNyoung)
+ * Reported, fixed #1646: Non-blocking ByteBuffer parser `releaseBuffered()` can write
+   already-consumed bytes
+  (3.3.0)
  * Contributed #1651: Fix object context handling for buffered `INCLUDE_NON_NULL` tokens
   (3.1.6)
 
@@ -76,9 +79,4 @@ Antonin Janec (@xtonik)
 Scott Lewis (@scottslewis)
  * Contributed #1637: Add `JsonPointer.startsWith(JsonPointer)` to check
    prefix match
-  (3.3.0)
-
-DongNyoung Lee (@Dongnyoung)
- * Reported, fixed #1646: Non-blocking ByteBuffer parser `releaseBuffered()` can write
-   already-consumed bytes
   (3.3.0)
